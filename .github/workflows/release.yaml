@@ -1,0 +1,114 @@
+# This is the name of the workflow, visible on GitHub UI.
+name: release
+
+# Here we tell GitHub to run the workflow when a commit
+# is pushed or a Pull Request is opened.
+on:
+  release:
+    types: [released]
+
+# This is the list of jobs that will be run concurrently.
+# Since we use a build matrix, the actual number of jobs
+# started depends on how many configurations the matrix
+# will produce.
+jobs:
+  # This is the name of the job - can be whatever.
+  build-release:
+
+    # Here we tell GitHub that the jobs must be determined
+    # dynamically depending on a matrix configuration.
+    strategy:
+      matrix:
+        # The matrix will produce one job for each configuration
+        # parameter of type `arduino-platform`, in this case a
+        # total of 2.
+        arduino-platform: ["esp32:esp32"]
+        # This is usually optional but we need to statically define the
+        # FQBN of the boards we want to test for each platform. In the
+        # future the CLI might automatically detect and download the core
+        # needed to compile against a certain FQBN, at that point the
+        # following `include` section will be useless.
+        include:
+          # This works like this: when the platform is "arduino:samd", the
+          # variable `fqbn` is set to "arduino:samd:nano_33_iot".
+          - arduino-platform: "esp32:esp32"
+            fqbn: "esp32:esp32:esp32c3:DebugLevel=info,CDCOnBoot=cdc"
+
+    # This is the platform GitHub will use to run our workflow
+    runs-on: [self-hosted, linux]
+
+    # This is the list of steps this job will run.
+    steps:
+      # First of all, we clone the repo using the `checkout` action.
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # We use the `arduino/setup-arduino-cli` action to install and
+      # configure the Arduino CLI on the system.
+      - name: Setup Arduino CLI
+        uses: arduino/setup-arduino-cli@v1
+
+      # We then install the platform, which one will be determined
+      # dynamically by the build matrix.
+      - name: Install platform
+        run: |
+          arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli core install ${{ matrix.arduino-platform }} --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+      # Finally, we compile the sketch, using the FQBN that was set
+      # in the build matrix.
+      - name: Compile for collector.currently.cloud
+        uses: arduino/compile-sketches@v1.0.1
+        with:
+          fqbn: ${{ matrix.fqbn }}
+          verbose: true
+          platforms: |
+            - name: "esp32:esp32"
+              version: "2.0.7"
+              source-url: "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+          libraries: |
+            - name: log4arduino
+            - source-url: git@github.com:me-no-dev/AsyncTCP.git
+            - source-url: git@github.com:khoih-prog/ESPAsyncWebServer.git
+            - name: MQTT
+            - source-url: git@github.com:arduino-libraries/ArduinoHttpClient.git
+            - name: ArduinoJson
+            - name: Adafruit GFX Library
+            - name: Adafruit BusIO
+            - name: Adafruit NeoPixel
+            - source-url: git@github.com:sosandstrom/sMQTTBroker.git
+            - name: SnappyProto
+            - name: base64
+          cli-compile-flags: |
+            - --output-dir
+            - ./build
+            - --build-property
+            - "compiler.cpp.extra_flags=-DCLOUD_SERVER_HOST=\"collector.currently.cloud\" -DVERSION=\"${{ github.event.release.name }}\" -Wno-error=unused-but-set-variable"
+          sketch-paths: .
+      - name: list Prod results
+        run: |
+          ls -la build
+          mv build/device-8266.ino.bin build/device-${{ github.event.release.name }}-esp32v1.bin
+          openssl md5 build/device-${{ github.event.release.name }}-esp32v1.bin
+      - id: 'auth-staging'
+        name: Authenticate with GCS staging
+        uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.CLOUD_KEY_JSON }}'
+      - id: 'upload-file-prod-migr'
+        name: Upload prod to one.elmeter-gcr.releasy.work
+        uses: 'google-github-actions/upload-cloud-storage@v0'
+        with:
+          path: 'build/device-${{ github.event.release.name }}-esp32v1.bin'
+          destination: 'one.elmeter-gcr.releasy.work'
+      - id: 'auth-prod'
+        name: Authenticate with GCS prod
+        uses: 'google-github-actions/auth@v0'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CLOUD_PROD_KEY }}'
+      - id: 'upload-file-prod'
+        name: Upload prod to one.currently-prod.currently.cloud
+        uses: 'google-github-actions/upload-cloud-storage@v0'
+        with:
+          path: 'build/device-${{ github.event.release.name }}-esp32v1.bin'
+          destination: 'one.currently-prod.currently.cloud'
