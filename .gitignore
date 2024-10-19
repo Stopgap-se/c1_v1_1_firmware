@@ -1,0 +1,11 @@
+c1_v*.bin
+*.pem
+.idea
+.DS_Store
+bin/arduino-cli/bin
+bin/azure
+bin/HA
+build
+debug.cfg
+debug_custom.json
+esp32c3.svd
