@@ -37,7 +37,7 @@ jobs:
             fqbn: "esp32:esp32:esp32c3:DebugLevel=info"
 
     # This is the platform GitHub will use to run our workflow
-    runs-on: [self-hosted, linux]
+    runs-on: [self-hosted, Linux]
 
     # This is the list of steps this job will run.
     steps:
