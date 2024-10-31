@@ -2,9 +2,15 @@
 #include <log4arduino.h>
 
 #include "boot_button.h"
+#include "han_reader.h"
 #include "led_rgb.h"
+#include "obis_parser.h"
 #include "prefs.h"
 #include "wifi_wrapper.h"
+
+void _onState(ElectricityStateProto *state) {
+    LOG("%dW", state->metered.totalImportedPower);
+}
 
 void setup() {
     // do not touch strapping pins (2=SCK, 9=RS, 8=/BACKLIGHT) during startup:
@@ -14,11 +20,15 @@ void setup() {
     Serial.begin(115200);
     LOG_INIT(&Serial);
     prefsSetup();
-    bootSetup();
+    bootSetup(hanInjectMagic);
+    obisSetup(NULL);
+    hanSetup(obisParseLine, NULL);
     wifiSetup();
     LOGS("=== setup() ===");
 }
 
 void loop() {
     bootLoop();
+//    hanLoop();
+    obisLoop();
 }

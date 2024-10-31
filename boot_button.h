@@ -8,7 +8,7 @@
 
 static uint32_t bootPinMask;
 static volatile uint32_t *bootPinPort, bootButtonDownMillis = 0, bootButtonUpMillis = 0;
-static void (*bootBlinkCallback)(uint32_t currentMillis, uint32_t lastMillis);
+static void (*_magicCallback)(uint32_t dMS);
 
 static void IRAM_ATTR bootButtonHandler(void) {
     uint32_t ms = millis();
@@ -20,6 +20,7 @@ static void IRAM_ATTR bootButtonHandler(void) {
     else {
         bootButtonDownMillis = ms;
     }
+    LOG("BOOT button %dms", bootButtonUpMillis-bootButtonDownMillis);
 }
 
 void bootLoop(void) {
@@ -27,7 +28,10 @@ void bootLoop(void) {
     if (bootButtonDownMillis < bootButtonUpMillis) {
 
         uint32_t dMS = bootButtonUpMillis - bootButtonDownMillis;
-        if (10000 <= dMS && dMS < 15000) {
+        if (3000 <= dMS && dMS < 5000 && _magicCallback) {
+            _magicCallback(dMS);
+        }
+        else if (10000 <= dMS && dMS < 15000) {
             // factory reset
             prefsFactoryReset();
         }
@@ -35,7 +39,8 @@ void bootLoop(void) {
     }
 }
 
-void bootSetup() {
+void bootSetup(void (*magicCallback)(uint32_t dMS)) {
+    _magicCallback = magicCallback;
     pinMode(GPIO_BOOT, INPUT_PULLUP);
     bootPinMask = digitalPinToBitMask(GPIO_BOOT);
     bootPinPort = portInputRegister(digitalPinToPort(GPIO_BOOT));
