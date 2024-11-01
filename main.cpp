@@ -8,6 +8,7 @@
 #include "led_rgb.h"
 #include "obis_parser.h"
 #include "prefs.h"
+#include "tcp_server.h"
 #include "web_server.h"
 #include "wifi_wrapper.h"
 
@@ -21,9 +22,10 @@ void setup() {
     prefsSetup();
     bootSetup(hanInjectMagic);
     deviceSetup();
-    obisSetup(NULL);
-    hanSetup(obisParseLine, NULL);
+    obisSetup(crutchOnState);
+    hanSetup(crutchOnLine, crutchOnOverflow);
     wifiSetup();
+    tcpServerBegin();
     webServerSetup();
     LOGS("=== setup() ===");
 }
@@ -31,4 +33,5 @@ void setup() {
 void loop() {
     bootLoop();
     obisLoop();
+    wifiLoop();
 }

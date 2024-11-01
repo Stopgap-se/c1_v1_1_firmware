@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="jquery-3.6.3.min.js"></script>
+    <title>Appliances: Currently One</title>
+    <link rel="icon" href="favicon.png"/>
+    <link rel="stylesheet" href="currently.css" />
+    <script src="currently.js"></script>
+</head>
+<body>
+<img src="currently_logo.png" /><br/>
+&lt;&nbsp;<a href="/">Home</a>
+
+<h5>Individual Appliances</h5><div>
+<table class="detection device">
+<tbody id="devices" />
+</table>
+</div>
+<a href="https://forum.currently.one/t/individuella-apparater-individual-appliances/176" target="_blank">Forum Topic about Detection</a>
+<script>
+    $(document).ready(function() {
+    getDevices(_populateDevices);
+    });
+</script>
+</body>
+</html>

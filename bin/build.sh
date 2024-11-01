@@ -1,7 +1,7 @@
 #!/bin/sh
 #bin/arduino-cli/bin/arduino-cli help compile
-#bin/gz_hexdump.sh resources/currently.js
-#bin/gz_hexdump.sh resources/index.html
+bin/gz_hexdump.sh resources/currently.js
+bin/gz_hexdump.sh resources/index.html
 
 if [ $# -lt 1 ]; then
   port="/dev/cu.usbmodem1101"

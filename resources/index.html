@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="jquery-3.6.3.min.js"></script>
+    <title>Currently One</title>
+    <link rel="icon" href="favicon.png"/>
+    <link rel="stylesheet" href="currently.css" />
+    <script src="currently.js"></script>
+</head>
+<body>
+<img src="currently_logo.png" />
+<form onsubmit="restart(); return false;" id="restart">
+<input type="hidden" name="foo" value="" form="restart" />
+</form>
+<form onsubmit='fota(); return false;' id="fota">
+<input type="hidden" name="foo" value="" form="fota" />
+</form>
+<form enctype='multipart/form-data' action='/api/v1/firmware' method='POST' id="upload">
+<input type="hidden" name="foo" value="" form="upload" />
+</form>
+<form onsubmit='return confirm("Are you sure?");' method="post" action="/api/v1/factory_reset" id="factory">
+<input type="hidden" name="foo" value="" form="factory" />
+</form>
+
+<h5>Configure WiFi</h5>
+<div>
+<form method="post" action="/api/v1/provision" id="provision" />
+<table><thead>
+<tr><th/><td>
+<button type="button" onclick="scanWiFis();">Scan</button>
+</td></tr></thead>
+<tbody id="networks"></tbody>
+<tfoot>
+<tr><th>SSID</th><td><input type="text" id="form_ssid" name="ssid" value="" minlength="2" maxlength="40" required form="provision"/></td></tr>
+<tr><th>Passkey</th><td><input type="password" name="pass" value="" maxlength="40" form="provision"/></td></tr>
+<tr><th/><td><input type="submit" value="Save" form="provision" /></td></tr>
+</tfoot>
+</table>
+</div>
+
+<h5>Device state</h5>
+<div>
+<table><tbody id="states">
+<tr><th>status</th><td id="status">offline</td></tr>
+<tr><th>last time</th><td id="time">Loading</td></tr>
+<tr><th>power (W)</th><td id="W">Loading</td></tr>
+<tr><th>blink power (W)</th><td id="bW">Not active</td></tr>
+<tr><th>energy (Wh)</th><td id="Wh">Loading</td></tr>
+</tbody></table>
+</div>
+
+<h5>Restart</h5>
+<div>
+    <input type="submit" value="Restart" form="restart"/>
+</div>
+
+<h5>Device info</h5>
+<div>
+<table><tbody>
+<tr><th>id</th><td id="deviceId">Loading</td></tr>
+<tr><th>url</th><td id="url">Loading</td></tr>
+<tr><th>version</th><td id="deviceVersion">Loading</td></tr>
+<tr><th>SSID</th><td id="ssid">Loading</td></tr>
+<tr><th>IP address</th><td id="localIP">Loading</td></tr>
+<tr><th>RSSI (dB)</th><td id="rssi">Loading</td></tr>
+</tbody></table>
+</div>
+<h5>Device settings</h5>
+<div>
+<table>
+<thead>
+<tr>
+<tr><th>param</th><th>value</th><th>Save</th><th>Clear</th></tr>
+</tr>
+</thead>
+<tbody id="prefs">
+</tbody></table>
+</div>
+
+<h5>FOTA (Firmware Over-The-Air)</h5>
+<div>
+<table>
+<tr><th>to version</th><td id="fota_version"></td></tr>
+<tr><th>URL</th><td><input type="url" id="fota_url" name="url" value="" size="64" required form="fota"/></td></tr>
+<tr><th>MD5</th><td><input type="text" id="fota_md5" name="md5" value="" size="32" minlength="32" maxlength="32" required form="fota"/></td></tr>
+<tr><th></th><td><input type="submit" value="Upgrade" form="fota"/></td></tr>
+</table>
+</div>
+
+<label for="fota_progress">Firmware update progress:</label>
+<progress id="fota_progress" value="0" max="100">FOTA or Upload</progress>
+
+<h5>Firmware Upload</h5>
+<div>
+<table>
+<tr><th>Firmware .bin file</th><td><input name='firmware' type='file' form="upload"/></td></tr>
+<tr><th></th><td><input type='submit' value='Upload' form="upload"/></td></tr>
+</table>
+</div>
+
+<h5>Factory reset</h5>
+<div>
+<input type="submit" value="Factory reset" form="factory"/>
+</div>
+
+<h5>Individual Appliances</h5>
+<div>
+    <a href="devices.html">View appliances</a>&nbsp;&gt;
+</div>
+
+<h5>Device logs</h5>
+<pre id="logs">
+</pre>
+<script>
+    $(document).ready(onIndex);
+</script>
+</body>
+</html>

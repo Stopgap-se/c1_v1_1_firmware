@@ -1,8 +1,11 @@
 #ifndef _DEVICE_API_H_
 #define _DEVICE_API_H_
 
-#include <Preferences.h>
 #include <WiFi.h>
+
+#ifndef VERSION
+#define VERSION "my-SNAPSHOT"
+#endif
 
 #define DEVICE_MODE_HAN   0x01
 #define DEVICE_MODE_BLINK 0x02

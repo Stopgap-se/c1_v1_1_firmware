@@ -1,0 +1,65 @@
+body {
+background: #FFF0DB;
+color: #201E1C;
+font-family: 'General Sans';
+font-style: normal;
+font-weight: 500;
+font-size: 20px;
+text-align: left;
+}
+
+div {
+background: #FFFFFF;
+}
+
+input[type=submit],
+input[type=file],
+button {
+background-color: #FF9602;
+border: none;
+}
+
+pre {
+background: black;
+color: green;
+}
+
+td {
+  vertical-align: top;
+}
+th {
+  background-color: silver;
+}
+
+.detection {
+  padding: 2px;
+}
+.device {
+  background-color: #E0F8E7;
+}
+.device:nth-child(odd) {
+  background-color: #B4EEC4;
+}
+.state {
+  background-color: #FFF8ED;
+}
+.state:nth-child(odd) {
+  background-color: #FFF0DB;
+}
+.trans {
+  background-color: #EBF8FB;
+}
+.trans:nth-child(odd) {
+  background-color: #CDECF4;
+}
+
+.warning {
+  color: #F41000;
+  background-color: white;
+  border: 1px solid #F41000;
+}
+input:invalid {
+  color: #F41000;
+  background-color: white;
+  border: 1px solid #F41000;
+}

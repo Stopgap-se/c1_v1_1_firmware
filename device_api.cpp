@@ -2,10 +2,19 @@
 #include <log4arduino.h>
 #include <WiFi.h>
 
+#include "prefs.h"
+
 static char deviceIdReverse[14];
 
 const char * getDeviceId() {
   return deviceIdReverse;
+}
+
+long getDeviceGmtOffset() {
+    return prefs()->getInt(PREFS_TIME_GMT_OFFSET, 3600);
+}
+int getDeviceDaylightOffset() {
+    return prefs()->getInt(PREFS_TIME_DAYLIGHT_OFFSET, 3600);
 }
 
 const char * deviceSetup() {
