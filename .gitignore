@@ -5,6 +5,7 @@ c1_v*.bin
 bin/arduino-cli/bin
 bin/azure
 bin/HA
+/bin
 build
 debug.cfg
 debug_custom.json

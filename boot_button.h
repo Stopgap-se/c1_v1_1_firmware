@@ -25,6 +25,15 @@ static void IRAM_ATTR bootButtonHandler(void) {
 
 void bootLoop(void) {
     static uint32_t lastBootBlinkMillis = 0;
+
+    // FIXME: remove
+//    uint32_t ms = millis();
+//    if (lastBootBlinkMillis + 500 < ms && _magicCallback) {
+//        _magicCallback(ms - lastBootBlinkMillis);
+//        lastBootBlinkMillis = ms;
+//    }
+    // FIXME: end remove
+
     if (bootButtonDownMillis < bootButtonUpMillis) {
 
         uint32_t dMS = bootButtonUpMillis - bootButtonDownMillis;

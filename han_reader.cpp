@@ -37,91 +37,7 @@ uint16_t updateCRC(uint16_t crc, const char *data, size_t len) {
     return crc;
 }
 
-uint16_t _onHanData(const char *data, uint16_t len) {
-    for (uint16_t i = 0; i < len; i++) {
-        hanBuf[(hanWritten+i)&HAN_BUF_MASK] = data[i];
-    }
-    hanWritten += len;
-    if (HAN_BUF_SIZE < hanWritten-hanRead) {
-        LOG("serialEvent1 OVERFLOW %d(%d)", hanRead, hanWritten);
-        hanRead = hanWritten - HAN_BUF_SIZE;
-    }
-    hanLoop();
-    return len;
-}
-
-void _onReceiveError(hardwareSerial_error_t hse) {
-    LOG("_onReceiveError %d", hse);
-}
-
-static const char* magicFormat = \
-    "/LGF5E360\\ABC123\r\n\r\n" \
-	"0-0:1.0.0(220907135912W)\r\n" \
-	"1-0:1.8.0(%08d.%03d*kWh)\r\n" \
-	"1-0:2.8.0(%08d.%03d*kWh)\r\n" \
-	"1-0:1.7.0(%04d.%03d*kW)\r\n" \
-	"1-0:2.7.0(%04d.%03d*kW)\r\n" \
-	"1-0:21.7.0(%04d.%03d*kW)\r\n" \
-	"1-0:42.7.0(%04d.%03d*kW)\r\n" \
-	"1-0:32.7.0(0240.3*V)\r\n" \
-	"1-0:31.7.0(%04d.%03d*A)\r\n" \
-	"!";
-void hanInjectMagic(uint32_t bootButtonDownMillis) {
-    char magicMessage[HAN_BUF_SIZE];
-    const uint32_t ms = millis();
-    uint16_t crc = 0;
-    sprintf(magicMessage, magicFormat,
-        ms/1000000, (ms/1000)%1000, // Wh
-        ms/10000000, (ms/10000)%1000, // Wh P
-        bootButtonDownMillis/1000, bootButtonDownMillis%1000, // W
-        (bootButtonDownMillis>>3)/1000, (bootButtonDownMillis>>3)%1000, // P
-        (bootButtonDownMillis>>1)/1000, (bootButtonDownMillis>>1)%1000, // L1
-        (bootButtonDownMillis>>4)/1000, (bootButtonDownMillis>>4)%1000, // P2
-        (bootButtonDownMillis<<1)/1000, (bootButtonDownMillis<<1)%1000 // I1 in A, not kA
-    );
-    LOG("writing %d chars on HAN buffer", strlen(magicMessage));
-    _onHanData(magicMessage, strlen(magicMessage));
-    crc = updateCRC(0, magicMessage, strlen(magicMessage));
-    sprintf(magicMessage, "%04X\r\n", crc);
-    LOG("writing CRC %04X on HAN buffer", crc);
-    _onHanData(magicMessage, strlen(magicMessage));
-}
-
-void serialEvent1() {
-    char buf[1024];
-    while (Serial1.available()) {
-        memset(buf, 0, 1024);
-        uint16_t count = Serial1.read(buf, min(Serial1.available(), 1000));
-        _onHanData(buf, count);
-    }
-}
-
-void hanSetup(void (*lineCallback)(const char *line), void (*overflowCallback)(const char *line, size_t len))
-{
-    uint8_t hanChannel = prefs()->getUChar(PREFS_HW_HAN_CHANNEL, 0);
-    bool disablePullup = prefs()->getBool(PREFS_PULLUP_DIS, false);
-
-    _lineCallback = lineCallback;
-    _overflowCallback = overflowCallback;
-
-    memset(hanBuf, 0, HAN_BUF_SIZE);
-    memset(hanPrefix, 0, 5);
-    sprintf(hanPrefix, "-%d:", hanChannel); // date and time does not have 1-0: but 0-0:
-
-    // On C3, HAN TX goes to GPIO6
-    Serial1.setRxBufferSize(HAN_BUF_SIZE);
-    Serial1.begin(115200, SERIAL_8N1, GPIO_HAN_DATA, -1, true); // ports only used on ESP32 for Serial1
-    if (disablePullup) {
-        gpio_pullup_dis(GPIO_NUM_6); // GPIO_HAN_DATA);
-    }
-    Serial1.onReceiveError(_onReceiveError);
-    LOG("HAN setup GPIO %d, pullup %s", GPIO_HAN_DATA,
-        disablePullup ? "disabled" : "internal");
-    pinMode(GPIO_HAN_RTS, OUTPUT);
-    digitalWrite(GPIO_HAN_RTS, HIGH);
-}
-
-void hanLoop()
+void _hanProcess()
 {
     const uint32_t ms = millis();
     static uint32_t lastConnectAttempt = 0, lastDataReceived = 0;
@@ -160,4 +76,89 @@ void hanLoop()
             i++;
         }
     }
+}
+
+uint16_t _onHanData(const char *data, uint16_t len) {
+    for (uint16_t i = 0; i < len; i++) {
+        hanBuf[(hanWritten+i)&HAN_BUF_MASK] = data[i];
+    }
+    hanWritten += len;
+    if (HAN_BUF_SIZE < hanWritten-hanRead) {
+        LOG("serialEvent1 OVERFLOW %d(%d)", hanRead, hanWritten);
+        hanRead = hanWritten - HAN_BUF_SIZE;
+    }
+    return len;
+}
+
+void _onReceiveError(hardwareSerial_error_t hse) {
+    LOG("_onReceiveError %d", hse);
+}
+
+static const char* magicFormat = \
+    "/LGF5E360\\ABC123\r\n\r\n" \
+	"0-0:1.0.0(220907135912W)\r\n" \
+	"1-0:1.8.0(%08d.%03d*kWh)\r\n" \
+	"1-0:2.8.0(%08d.%03d*kWh)\r\n" \
+	"1-0:1.7.0(%04d.%03d*kW)\r\n" \
+	"1-0:2.7.0(%04d.%03d*kW)\r\n" \
+	"1-0:21.7.0(%04d.%03d*kW)\r\n" \
+	"1-0:42.7.0(%04d.%03d*kW)\r\n" \
+	"1-0:32.7.0(0240.3*V)\r\n" \
+	"1-0:31.7.0(%04d.%03d*A)\r\n" \
+	"!";
+void hanInjectMagic(uint32_t bootButtonDownMillis) {
+    char magicMessage[HAN_BUF_SIZE];
+    const uint32_t ms = millis();
+    uint16_t crc = 0;
+    sprintf(magicMessage, magicFormat,
+        ms/1000000, (ms/1000)%1000, // Wh
+        ms/10000000, (ms/10000)%1000, // Wh P
+        bootButtonDownMillis/1000, bootButtonDownMillis%1000, // W
+        (bootButtonDownMillis>>3)/1000, (bootButtonDownMillis>>3)%1000, // P
+        (bootButtonDownMillis>>1)/1000, (bootButtonDownMillis>>1)%1000, // L1
+        (bootButtonDownMillis>>4)/1000, (bootButtonDownMillis>>4)%1000, // P2
+        (bootButtonDownMillis<<1)/1000, (bootButtonDownMillis<<1)%1000 // I1 in A, not kA
+    );
+//    LOG("writing %d chars on HAN buffer", strlen(magicMessage));
+    _onHanData(magicMessage, strlen(magicMessage));
+    crc = updateCRC(0, magicMessage, strlen(magicMessage));
+    sprintf(magicMessage, "%04X\r\n", crc);
+//    LOG("writing CRC %04X on HAN buffer", crc);
+    _onHanData(magicMessage, strlen(magicMessage));
+    _hanProcess();
+}
+
+void serialEvent1() {
+    char buf[1024];
+    while (Serial1.available()) {
+        memset(buf, 0, 1024);
+        uint16_t count = Serial1.read(buf, min(Serial1.available(), 1000));
+        _onHanData(buf, count);
+    }
+    _hanProcess();
+}
+
+void hanSetup(void (*lineCallback)(const char *line), void (*overflowCallback)(const char *line, size_t len))
+{
+    uint8_t hanChannel = prefs()->getUChar(PREFS_HW_HAN_CHANNEL, 0);
+    bool disablePullup = prefs()->getBool(PREFS_PULLUP_DIS, false);
+
+    _lineCallback = lineCallback;
+    _overflowCallback = overflowCallback;
+
+    memset(hanBuf, 0, HAN_BUF_SIZE);
+    memset(hanPrefix, 0, 5);
+    sprintf(hanPrefix, "-%d:", hanChannel); // date and time does not have 1-0: but 0-0:
+
+    // On C3, HAN TX goes to GPIO6
+    Serial1.setRxBufferSize(HAN_BUF_SIZE);
+    Serial1.begin(115200, SERIAL_8N1, GPIO_HAN_DATA, -1, true); // ports only used on ESP32 for Serial1
+    if (disablePullup) {
+        gpio_pullup_dis(GPIO_NUM_6); // GPIO_HAN_DATA);
+    }
+    Serial1.onReceiveError(_onReceiveError);
+    LOG("HAN setup GPIO %d, pullup %s", GPIO_HAN_DATA,
+        disablePullup ? "disabled" : "internal");
+    pinMode(GPIO_HAN_RTS, OUTPUT);
+    digitalWrite(GPIO_HAN_RTS, HIGH);
 }

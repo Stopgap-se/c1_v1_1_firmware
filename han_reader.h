@@ -6,6 +6,5 @@ void hanInjectMagic(uint32_t dMS);
 
 void hanSetup(void (*lineCallback)(const char *line),
               void (*overflowCallback)(const char *line, size_t len));
-void hanLoop();
 
 #endif // _HAN_READER_H_
