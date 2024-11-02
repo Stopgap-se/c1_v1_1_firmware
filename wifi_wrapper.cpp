@@ -3,12 +3,14 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiAP.h>
+#include <AsyncTCP.h>
 #include <DNSServer.h>
 #include <ESPmDNS.h>
 #include <esp32c3/rom/rtc.h>
 #include <esp_sntp.h>
 
 #include "device_api.h"
+#include "han_reader.h"
 #include "led_rgb.h"
 #include "prefs.h"
 #include "web_server.h"
@@ -16,7 +18,33 @@
 
 #define CRED_SIZE 40
 
-static bool _verifyingCredentials = false, _gotConnected = false;
+static bool _verifyingCredentials = false;
+static AsyncClient *_tcpClient = NULL;
+static char _tcpObisHost[128];
+
+void _tcpClientConnect();
+
+void _onTelnetClientDisconnect(void *arg, AsyncClient* telnetClient) {
+    LOG("tcp DISCONNECT from %s", arg);
+    delay(1000);
+    _tcpClientConnect();
+}
+
+void _onTelnetClientError(void *arg, AsyncClient* telnetClient, int8_t error) {
+    LOG("tcp ERROR %d %s", error, telnetClient->errorToString(error));
+}
+
+void _onTelnetClientData(void *arg, AsyncClient* telnetClient, void *data, size_t len) {
+    hanOnData((char *)data, len, true);
+}
+
+void _tcpClientConnect() {
+    int connected = _tcpClient->connect(_tcpObisHost, 23);
+    LOG("TCP reconnected to %s: %d", _tcpObisHost, connected);
+    _tcpClient->onDisconnect(_onTelnetClientDisconnect, (void *)_tcpObisHost);
+    _tcpClient->onError(_onTelnetClientError, (void *)_tcpObisHost);
+    _tcpClient->onData(_onTelnetClientData, (void *)_tcpObisHost);
+}
 
 void _syncNTP() {
     static const char* ntp_primary = "time.google.com";
@@ -106,8 +134,10 @@ void _onWiFiEvent(WiFiEvent_t event) {
       }
       else {
         webServerBegin();
+        if (_tcpClient && !_tcpClient->connected()) {
+            _tcpClientConnect();
+        }
       }
-      _gotConnected = true;
       ledBlack();
       break;
     case SYSTEM_EVENT_STA_LOST_IP:
@@ -161,11 +191,9 @@ void wifiSetup() {
     WiFi.setHostname(mDnsHostname);
     MDNS.begin(mDnsHostname);
     MDNS.addService("http", "tcp", 80);
-}
 
-void wifiLoop() {
-    if (_gotConnected) {
-        _gotConnected = false;
-
+    if (prefs()->isKey(PREFS_TELNET_HOST)) {
+        prefs()->getString(PREFS_TELNET_HOST, _tcpObisHost, 128);
+        _tcpClient = new AsyncClient();
     }
 }

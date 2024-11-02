@@ -32,6 +32,4 @@ void setup() {
 
 void loop() {
     bootLoop();
-    obisLoop();
-    wifiLoop();
 }

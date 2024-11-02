@@ -78,7 +78,7 @@ void _hanProcess()
     }
 }
 
-uint16_t _onHanData(const char *data, uint16_t len) {
+uint16_t hanOnData(const char *data, uint16_t len, bool process) {
     for (uint16_t i = 0; i < len; i++) {
         hanBuf[(hanWritten+i)&HAN_BUF_MASK] = data[i];
     }
@@ -86,6 +86,9 @@ uint16_t _onHanData(const char *data, uint16_t len) {
     if (HAN_BUF_SIZE < hanWritten-hanRead) {
         LOG("serialEvent1 OVERFLOW %d(%d)", hanRead, hanWritten);
         hanRead = hanWritten - HAN_BUF_SIZE;
+    }
+    if (process) {
+        _hanProcess();
     }
     return len;
 }
@@ -120,11 +123,11 @@ void hanInjectMagic(uint32_t bootButtonDownMillis) {
         (bootButtonDownMillis<<1)/1000, (bootButtonDownMillis<<1)%1000 // I1 in A, not kA
     );
 //    LOG("writing %d chars on HAN buffer", strlen(magicMessage));
-    _onHanData(magicMessage, strlen(magicMessage));
+    hanOnData(magicMessage, strlen(magicMessage));
     crc = updateCRC(0, magicMessage, strlen(magicMessage));
     sprintf(magicMessage, "%04X\r\n", crc);
 //    LOG("writing CRC %04X on HAN buffer", crc);
-    _onHanData(magicMessage, strlen(magicMessage));
+    hanOnData(magicMessage, strlen(magicMessage));
     _hanProcess();
 }
 
@@ -133,9 +136,8 @@ void serialEvent1() {
     while (Serial1.available()) {
         memset(buf, 0, 1024);
         uint16_t count = Serial1.read(buf, min(Serial1.available(), 1000));
-        _onHanData(buf, count);
+        hanOnData(buf, count, true);
     }
-    _hanProcess();
 }
 
 void hanSetup(void (*lineCallback)(const char *line), void (*overflowCallback)(const char *line, size_t len))

@@ -6,6 +6,5 @@
 void obisParseLine(const char *line);
 
 void obisSetup(void (*stateCallback)(ElectricityStateProto *state));
-void obisLoop();
 
 #endif // _OBIS_PARSER_H_

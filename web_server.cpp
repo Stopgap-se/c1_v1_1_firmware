@@ -265,8 +265,9 @@ void _onDeletePrefs(AsyncWebServerRequest *request) {
 void _onEventSourceConnect(AsyncEventSourceClient *client) {
     char configMessage[512];
 
+    client->send(StatusOnline, TopicStatus);
     _sprintConfig(configMessage);
-    client->send(configMessage, "config");
+    client->send(configMessage, TopicConfig);
     LOG("esClient connected from %s", client->client()->remoteIP().toString());
 }
 

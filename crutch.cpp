@@ -34,8 +34,8 @@ void crutchRestart(const char *reason) {
     char message[1024];
     prefs()->end();
     sprintf(message, "restart %s", reason);
-    eventSourceSend(message, "status");
-    eventSourceSend(message, "log");
+    eventSourceSend(message, TopicStatus);
+    eventSourceSend(message, TopicLog);
     LOGS(message);
     eventSourceTeardown();
     delay(1000);

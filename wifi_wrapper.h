@@ -6,6 +6,5 @@
 wl_status_t wifiOnProvision(const char *ssid, const char *pass);
 
 void wifiSetup();
-void wifiLoop();
 
 #endif // _WIFI_WRAPPER_H_

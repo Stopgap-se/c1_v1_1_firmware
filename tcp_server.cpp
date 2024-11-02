@@ -31,6 +31,15 @@ size_t tcpServerWrite(const char * data, size_t len) {
     return n;
 }
 
+void _onDisconnect(void *arg, AsyncClient* client) {
+    LOGS("TCP.client DISCONNECTED");
+    _tcpClientFree();
+}
+void _onError(void *arg, AsyncClient* client, int8_t error) {
+    LOG("TCP.client ERROR %d %s", error, client->errorToString(error));
+    _tcpClientFree();
+}
+
 void _tcpClientConnectHandler(void *arg, AsyncClient *client) {
     // free old existing?
     if (_asyncClient && !_asyncClient->connected()) {
@@ -39,6 +48,8 @@ void _tcpClientConnectHandler(void *arg, AsyncClient *client) {
 
     if (!_asyncClient) {
         _asyncClient = client;
+        _asyncClient->onDisconnect(_onDisconnect, NULL);
+        _asyncClient->onError(_onError, NULL);
         LOG("TCP.client connected from %s", client->remoteIP().toString());
     }
     else {

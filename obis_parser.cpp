@@ -16,7 +16,6 @@
 static void (*_stateCallback)(ElectricityStateProto *state);
 static bool crcDisabled;
 static float _tcCorr; // transformer constant
-static uint32_t rtsLowMillis = 0, rtsBlockMillis = 0;
 
 int strswap(char *str, char find, char replace) {
     int i = 0, n = 0;
@@ -198,20 +197,13 @@ void obisParseLine(const char *line) {
             char dbg[128];
             sprintf(dbg, "/%s %s OK, %dW",
                 state.metered.identifier, calculated, state.metered.totalImportedPower);
-            LOGS(dbg);
+//            LOGS(dbg);
             if (_stateCallback) {
                 _stateCallback(&state);
             }
         }
         else {
             LOG("CRC calc %s != %s", calculated, term);
-        }
-
-        // disable RTS for /LGF5E360 and E350
-        if (0 < rtsBlockMillis) {
-            digitalWrite(GPIO_HAN_RTS, LOW);
-            rtsLowMillis = millis();
-            LOGS("HAN RTS disabled");
         }
     }
     else {
@@ -223,16 +215,5 @@ void obisSetup(void (*stateCallback)(ElectricityStateProto *state)) {
     _stateCallback = stateCallback;
     crcDisabled = prefs()->getBool(PREFS_CRC_DIS);
     _tcCorr = 1000.0/prefs()->getInt(PREFS_HW_IMPS, 1000);
-    rtsBlockMillis = prefs()->getUInt(PREFS_HW_RTS_MS, 0);
     LOG("obisSetup(CRC %s)", crcDisabled ? "disabled" : "verify");
-}
-
-void obisLoop() {
-    const uint32_t ms = millis();
-    // time to enable RTS again?
-    if (rtsLowMillis && rtsLowMillis + rtsBlockMillis <= ms) {
-        digitalWrite(GPIO_HAN_RTS, HIGH);
-        rtsLowMillis = 0;
-        LOGS("HAN RTS enabled");
-    }
 }
