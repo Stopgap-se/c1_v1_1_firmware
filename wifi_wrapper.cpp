@@ -12,6 +12,7 @@
 #include "device_api.h"
 #include "han_reader.h"
 #include "led_rgb.h"
+#include "mqtt_client.h"
 #include "prefs.h"
 #include "web_server.h"
 #include "wifi_wrapper.h"
@@ -137,6 +138,7 @@ void _onWiFiEvent(WiFiEvent_t event) {
         if (_tcpClient && !_tcpClient->connected()) {
             _tcpClientConnect();
         }
+        mqttConnect();
       }
       ledBlack();
       break;

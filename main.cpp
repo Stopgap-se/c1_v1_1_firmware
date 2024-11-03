@@ -6,6 +6,7 @@
 #include "device_api.h"
 #include "han_reader.h"
 #include "led_rgb.h"
+#include "mqtt_client.h"
 #include "obis_parser.h"
 #include "prefs.h"
 #include "tcp_server.h"
@@ -24,6 +25,7 @@ void setup() {
     deviceSetup();
     obisSetup(crutchOnState);
     hanSetup(crutchOnLine, crutchOnOverflow);
+    mqttSetup();
     wifiSetup();
     tcpServerBegin();
     webServerSetup();
