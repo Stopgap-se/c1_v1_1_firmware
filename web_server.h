@@ -14,6 +14,7 @@ void eventSourceSend(const char *message,
         uint32_t id = 0,
         uint32_t reconnect = 0);
 void eventSourceTeardown();
+size_t sprintConfig(char *buf);
 
 void webServerSetup();
 

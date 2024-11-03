@@ -36,7 +36,7 @@ void eventSourceTeardown() {
     _eventSource.close();
 }
 
-size_t _sprintConfig(char *buf) {
+size_t sprintConfig(char *buf) {
     char mqtt[256], name[64];
     memset(mqtt, 0, 256);
     memset(name, 0, 64);
@@ -48,11 +48,12 @@ size_t _sprintConfig(char *buf) {
     bool pullupDisabled = prefs()->getBool(PREFS_PULLUP_DIS);
 //    const int txPwr = wifiGetTxPower();
 
-    return sprintf(buf, "{\"id\":\"%s\",\"v\":\"%s\",\"ssid\":\"%s\",\"localIP\":\"%s\",\"name\":\"%s\",\"rr\":\"%s\",\"rssi\":%d}",
+    return sprintf(buf, "{\"id\":\"%s\",\"v\":\"%s\",\"ssid\":\"%s\",\"localIP\":\"%s\",\"name\":\"%s\",\"t\":\"%s\",\"rr\":\"%s\",\"rssi\":%d}",
         getDeviceId(), VERSION,
         WiFi.SSID().length() ? WiFi.SSID().c_str() : CurrentlyOne,
         WiFi.localIP().toString().c_str(),
         name,
+        getDeviceDateTimeStr(),
         getResetReason(rtc_get_reset_reason(0)),
         WiFi.RSSI()); //, txPwr);
 }
@@ -266,7 +267,7 @@ void _onEventSourceConnect(AsyncEventSourceClient *client) {
     char configMessage[512];
 
     client->send(StatusOnline, TopicStatus);
-    _sprintConfig(configMessage);
+    sprintConfig(configMessage);
     client->send(configMessage, TopicConfig);
     LOG("esClient connected from %s", client->client()->remoteIP().toString());
 }

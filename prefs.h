@@ -44,7 +44,7 @@ const char PREFS_PULLUP_DIS[] = {"pullup"};
 
 void prefsEraseAll();
 void prefsFactoryReset();
-int prefsPutOrRemove(Preferences *prefs, const char *key, const char *value);
+int prefsPutOrRemove(const char *key, const char *value);
 void prefsSetup();
 Preferences * prefs();
 

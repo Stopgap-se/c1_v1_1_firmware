@@ -117,6 +117,7 @@ void _onWiFiEvent(WiFiEvent_t event) {
       LOGS("Connected to access point");
       break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
+      mqttEnd();
       LOGS("Disconnected from WiFi, reconnecting...");
       break;
     case SYSTEM_EVENT_STA_AUTHMODE_CHANGE:
@@ -138,8 +139,8 @@ void _onWiFiEvent(WiFiEvent_t event) {
         if (_tcpClient && !_tcpClient->connected()) {
             _tcpClientConnect();
         }
-        mqttConnect();
       }
+      mqttBegin();
       ledBlack();
       break;
     case SYSTEM_EVENT_STA_LOST_IP:

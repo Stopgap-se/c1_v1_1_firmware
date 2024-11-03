@@ -2,6 +2,7 @@
 #include <log4arduino.h>
 #include <WiFi.h>
 
+#include "device_api.h"
 #include "prefs.h"
 
 static char deviceIdReverse[14];
@@ -15,6 +16,28 @@ long getDeviceGmtOffset() {
 }
 int getDeviceDaylightOffset() {
     return prefs()->getInt(PREFS_TIME_DAYLIGHT_OFFSET, 3600);
+}
+
+const char *getDeviceDateTimeStrBy(struct tm timeinfo) {
+    static char iso8601by[ISO_8601_SIZE];
+    memset(iso8601by, 0, ISO_8601_SIZE);
+    strftime(iso8601by, ISO_8601_SIZE, "%Y-%m-%dT%H:%M:%S%z", &timeinfo); // 2022-09-07T13:59:12-0130
+    return iso8601by;
+}
+
+const char *getDeviceDateTimeStr() {
+    static char iso8601[ISO_8601_SIZE];
+    struct tm timeinfo;
+    getLocalTime(&timeinfo);
+    memset(iso8601, 0, ISO_8601_SIZE);
+    strcpy(iso8601, getDeviceDateTimeStrBy(timeinfo));
+    return iso8601;
+}
+
+uint32_t getDeviceSecondsSinceEpoch() {
+    struct tm timeinfo;
+    getLocalTime(&timeinfo);
+    return mktime(&timeinfo);
 }
 
 const char * deviceSetup() {
